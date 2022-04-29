@@ -501,7 +501,7 @@ function remove_package() {
         0)  upd || prw "Package ${1} is installed and needs to be removed." 
             upd && prw "Package ${1} is installed and will be removed." 
             upd && [[ ${1} = prelink ]] && prelink -ua
-            upd && apt purge ${1}
+            upd && apt -y purge ${1}
             upd && apt -y autoremove ${1} ;;
         *)  prn "Package ${1} is not installed." ;;
     esac
