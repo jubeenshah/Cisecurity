@@ -1939,7 +1939,7 @@ lev && (
     err || prn "No ungrouped files found." 
 )
 
-NO=6.1.13;    W=1; S=1; E=; SC=N; BD='Audit SUID executables'
+NO=6.1.13;    W=1; S=3; E=; SC=N; BD='Audit SUID executables'
 lev && (
     df --local -P | awk {'if (NR!=1) print $6'} | xargs -I '{}' find '{}' -xdev -type f -perm -4000 2>/dev/null | sort >${TMP2}
     grep "##SUID##" ${CISRC} | cut -d" " -f2 | sort > ${TMP1}
