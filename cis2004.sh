@@ -756,7 +756,7 @@ lev && [[ $GRP ]] && (
 NO=1.4.3;     W=1; S=1; E=; SC=;  BD='Ensure permissions on bootloader config are configured'
 lev && (update_grub)
 
-NO=1.4.4;     W=1; S=1; E=; SC=;  BD='Ensure authentication required for single user mode'
+NO=1.4.4;     W=1; S=3; E=; SC=;  BD='Ensure authentication required for single user mode'
 lev && (
     grep -q "^root:[*\!]:" /etc/shadow
     case  $? in
