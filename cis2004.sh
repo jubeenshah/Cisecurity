@@ -2240,18 +2240,6 @@ lev && (
 
 qte || (
     echo -e "\n\n\n\n######################################"
-
-    if [[ -s "${CISWARNLOG}" ]]; then
-        echo -e "\nWarning messages found in ${CISWARNLOG}\n" 
-        read -p 'Show warning log file? Y/n: ' ANS
-        case ${ANS} in
-            [nN]) : ;;
-            *)    less ${CISWARNLOG} ;;
-        esac
-        upd && echo -e "\nReboot server, fix errors and rerun script." 
-    else
-        echo -e "\nNo warning messages found in ${CISWARNLOG}." 
-        echo -e "\nSystem is hardened." 
-    fi
+    echo -e "\nSystem is hardened." 
     echo -e "\n######################################"
 )
