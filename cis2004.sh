@@ -1,7 +1,7 @@
 #! /bin/bash
 
 
-VERSION=20210528
+VERSION=20220429
 ################################### HARDENING SCRIPT FOR UBUNTU 2004 ########################### 
 
 # Check for bash
@@ -202,7 +202,7 @@ apt list --installed 2> /dev/null | grep -q net-tools
     echo -e "Make sure you can still log in after executing in update mode before restarting."
     echo -e "\nRestart $0\n"
     chmod 700 ${CISRC}
-    exit
+    
 }
 
 [[ ! -s ${CISRC} ]] && echo -e "Could not find ${CISRC}. Check folder and file permissions." && exit 1
@@ -835,7 +835,7 @@ lev && (update_file /etc/issue root root 644)
 NO=1.7.6;     W=1; S=1; E=; SC=;  BD='Ensure permissions on /etc/issue.net are configured'
 lev && (update_file /etc/issue.net root root 644)
 
-NO=1.8.1;     W=3; S=3; E=; SC=N; BD='Ensure GNOME Display Manager is removed'
+NO=1.8.1;     W=3; S=1; E=; SC=N; BD='Ensure GNOME Display Manager is removed'
 lev && (remove_package gdm3)
 
 NO=1.8.2;     W=1; S=1; E=; SC=;  BD='Ensure GDM login banner is configured'
