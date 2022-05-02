@@ -2243,8 +2243,7 @@ lev && (
     update_conf /etc/sysctl.d/local.conf 'net.ipv4.tcp_congestion_control=bbr'    #BBR
 )
 
-qte || (
-    echo -e "\n\n\n\n######################################"
-    echo -e "\nSystem is hardened." 
-    echo -e "\n######################################"
-)
+
+echo -e "\n\n\n\n######################################"
+echo -e "\nSystem is hardened." 
+echo -e "\n######################################"
