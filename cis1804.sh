@@ -364,6 +364,7 @@ function check_systemctl() {
         prn "System ${1} is enabled."
     else
         prw "System ${1} is not enabled."
+        upd && systemctl --now enable ${1} 
     fi
 }
 
@@ -505,7 +506,7 @@ function remove_package() {
         0)  upd || prw "Package ${1} is installed and needs to be removed." 
             upd && prw "Package ${1} is installed and will be removed." 
             upd && [[ ${1} = prelink ]] && prelink -ua
-            upd && apt  purge ${1}
+            upd && apt -y purge ${1}
             upd && apt -y autoremove ${1} ;;
         *)  prn "Package ${1} is not installed." ;;
     esac
@@ -542,7 +543,7 @@ function update_conf() {
             echo ${1} | grep -q sysctl
                 case $? in
                     0) upd && sysctl -wq net.ipv4.route.flush=1
-                       upd && ip6 && sysctl -wq net.ipv6.route.flush=1 ;;
+                       ip6 && upd && sysctl -wq net.ipv6.route.flush=1 ;;
             esac
 
         fi    
@@ -566,7 +567,10 @@ lev && (update_modprobe hfs)
 NO=1.1.1.5;   W=1; S=1; E=; SC=;  BD='Ensure mounting of hfsplus filesystems is disabled'
 lev && (update_modprobe hfsplus)
 
-NO=1.1.1.6;   W=1; S=3; E=; SC=;  BD='Ensure mounting of udf filesystems is disabled'
+NO=1.1.1.6;   W=1; S=1; E=; SC=Y; BD='Ensure mounting of squashfs filesystems is disabled' #check
+lev && (update_modprobe squashfs)
+
+NO=1.1.1.7;   W=1; S=3; E=; SC=;  BD='Ensure mounting of udf filesystems is limited'
 lev && (update_modprobe udf)
 
 NO=1.1.2;     W=1; S=1; E=; SC=;  BD='Ensure /tmp is configured'
@@ -580,9 +584,10 @@ lev && (
         upd && systemctl daemon-reload
         upd && systemctl --now enable tmp.mount
     fi
-)
+) 
 
 NO=1.1.3;     W=1; S=1; E=; SC=;  BD='Ensure nodev option set on /tmp partition'
+#change to systemd tmpfs
 lev && (update_fstab /tmp 'defaults,nodev,nosuid,noexec')
 
 NO=1.1.4;     W=1; S=1; E=; SC=;  BD='Ensure nosuid option set on /tmp partition'
@@ -595,10 +600,10 @@ NO=1.1.6;     W=1; S=1; E=; SC=;  BD='Ensure /dev/shm is configured'
 lev && (
     mount | grep -q -E "\s/dev/shm\s"
     case $? in
-        0)  prn "Found /dev/shm filesystem in mount."
+        0)  prn "Found /dev/shm filesystem in mount." 
             grep -q -E "\s/dev/shm\s" /etc/fstab
             case $? in
-                0)  prn "/dev/shm found in /etc/fstab."
+                0)  prn "/dev/shm found in /etc/fstab." 
                     update_fstab /dev/shm 'defaults,nodev,nosuid,noexec';;
                 *)  upd || prw "/dev/shm needs to be added to /etc/fstab"
                     upd && prw "Adding /dev/shm to /etc/fstab"
@@ -624,13 +629,13 @@ lev && (check_fstab /var)
 NO=1.1.11;    W=2; S=2; E=; SC=;  BD='Ensure separate partition exists for /var/tmp'
 lev && (check_fstab /var/tmp)
 
-NO=1.1.12;    W=1; S=1; E=; SC=;  BD='Ensure /var/tmp partition includes the nodev option'
+NO=1.1.12;    W=2; S=2; E=; SC=;  BD='Ensure nodev option set on /var/tmp partition'
 lev && (update_fstab /var/tmp 'defaults,nodev,nosuid,noexec')
 
-NO=1.1.13;    W=1; S=1; E=; SC=;  BD='Ensure /var/tmp partition includes the nosuid option'
+NO=1.1.13;    W=2; S=2; E=; SC=;  BD='Ensure nosuid option set on /var/tmp partition'
 lev  # Updated in 1.1.12
 
-NO=1.1.14;    W=1; S=1; E=; SC=;  BD='Ensure /var/tmp partition includes rthe noexec option'
+NO=1.1.14;    W=2; S=2; E=; SC=;  BD='Ensure noexec option set on /var/tmp partition'
 lev  # Updated in 1.1.12
 
 NO=1.1.15;    W=2; S=2; E=; SC=;  BD='Ensure separate partition exists for /var/log'
@@ -642,7 +647,7 @@ lev && (check_fstab /var/log/audit)
 NO=1.1.17;    W=2; S=2; E=; SC=;  BD='Ensure separate partition exists for /home'
 lev && (check_fstab /home)
  
-NO=1.1.18;    W=1; S=1; E=; SC=;  BD='Ensure /home partition includes the nodev option'
+NO=1.1.18;    W=1; S=3; E=; SC=;  BD='Ensure nodev option set on /home partition'
 lev && (update_fstab /home 'defaults,nodev')
 
 NO=1.1.19;    W=1; S=1; E=; SC=N; BD='Ensure nodev option set on removable media partitions'
@@ -665,7 +670,7 @@ lev && (
     err  || prn "All world-writable folders have their sticky bit set"
 )
 
-NO=1.1.23;    W=2; S=1; E=; SC=;  BD='Disable Automounting'
+NO=1.1.23;    W=2; S=3; E=; SC=;  BD='Disable Automounting'
 lev && (remove_package autofs)
 
 NO=1.1.24;    W=2; S=1; E=; SC=;  BD='Disable USB Storage'
@@ -674,7 +679,7 @@ lev && (update_modprobe usb_storage)
 NO=1.2.1;     W=1; S=1; E=; SC=N; BD='Ensure package manager repositories are configured'
 lev && (
     apt-cache policy | grep http | grep -vq "ubuntu.com"
-    (($? != 1)) && prw "Found other repositories. Check apt-cache policy."
+    (($? != 1)) && prw "Found repositories that are not Ubuntu repositories. Check apt policy."
     err         || prn "Only Ubuntu repositories installed"
 )
 
@@ -694,13 +699,12 @@ lev && (
                             while IFS= read FILE; do
                                 printf '##APTK## %s\n' "${FILE}" >> ${CISRC}
                             done < <(apt-key list 2>/dev/null) ;;
-                esac
+                esac 
             ) ;;
     esac
 )
 
-
-NO=1.3.1;     W=1; S=1; E=; SC=;  BD='Ensure AIDE is installed'
+NO=1.3.1;     W=1; S=3; E=; SC=;  BD='Ensure AIDE is installed'
 lev && (
     install_package aide
     install_package aide-common
@@ -720,23 +724,6 @@ lev && (
     fi
 )
 
-NO=1.3.1;     W=1; S=1; E=; SC=;  BD='Ensure sudo is installed'
-lev && (
-    install_package sudo
-    grep -q -E "^#includedir\s/etc/sudoers.d" /etc/sudoers
-    case $? in
-        0)  prn "Folder /etc/sudoers.d included in /etc/sudoers" ;;
-        *)  prw "Folder /etc/sudoers.d is not included in /etc/sudoers. Edit manually with visudo." ;;
-    esac
-    update_file /etc/sudoers.d/sudoers root root 440 '# Created by Cisecurity remediation script'
-)
-
-NO=1.3.2;     W=1; S=1; E=; SC=;  BD='Ensure sudo commands use pty'
-lev && (update_conf /etc/sudoers.d/sudoers 'Defaults use_pty')
-
-NO=1.3.3;     W=1; S=1; E=; SC=;  BD='Ensure sudo log file exists'
-lev && (update_conf /etc/sudoers.d/sudoers 'Defaults logfile="/var/log/sudo.log"')
-
 NO=1.4.1;     W=1; S=1; E=; SC=;  BD='Ensure permissions on bootloader config are not overridden'
 lev && (
     if (grep -E '^\s*chmod\s+444\s+\$\{grub_cfg\}\.new' -A 1 -B1 /usr/sbin/grub-mkconfig >/dev/null)
@@ -752,7 +739,7 @@ lev && (
     fi
 )
 
-NO=1.4.2;     W=1; S=1; E=; SC=;  BD='Ensure bootloader password is set'
+NO=1.4.2;     W=1; S=3; E=; SC=;  BD='Ensure bootloader password is set'
 lev && [[ $GRP ]] && (
     update_conf /etc/grub.d/10_linux 'CLASS="--class gnu-linux --class gnu --class os' 'CLASS="--class gnu-linux --class gnu --class os --unrestricted"'
     update_grub
@@ -764,7 +751,7 @@ lev && [[ $GRP ]] && (
                 grub-mkpasswd-pbkdf2 | tee ${TMP1} 
                 grep "^PBKDF2" -q ${TMP1}
                 case $? in
-                    0)  update_conf /etc/grub.d/${GRF} "set superusers=${SUDOUSR:-root}"
+                    0)  update_conf /etc/grub.d/${GRF} "set superusers=\"${SUDOUSR:-root}\""
                         echo -e "password_pbkdf2 ${SUDOUSR:-root} $(grep "^PBKDF2" ${TMP1} | awk -F "is " '{print $2}')" >> /etc/grub.d/${GRF}
                         update_grub ;;
                 esac ;;
@@ -775,7 +762,7 @@ lev && [[ $GRP ]] && (
 NO=1.4.3;     W=1; S=1; E=; SC=;  BD='Ensure permissions on bootloader config are configured'
 lev && (update_grub)
 
-NO=1.4.4;     W=1; S=1; E=; SC=;  BD='Ensure authentication required for single user mode'
+NO=1.4.4;     W=1; S=3; E=; SC=;  BD='Ensure authentication required for single user mode'
 lev && (
     grep -q "^root:[*\!]:" /etc/shadow
     case  $? in
@@ -799,26 +786,28 @@ lev && (update_conf /etc/sysctl.d/local.conf 'kernel.randomize_va_space' 'kernel
 NO=1.5.3;     W=1; S=1; E=; SC=;  BD='Ensure prelink is disabled'
 lev && (remove_package prelink)
 
-NO=1.6.4;     W=1; S=1; E=; SC=;  BD='Ensure core dumps are restricted'
+NO=1.5.4;     W=1; S=1; E=; SC=;  BD='Ensure core dumps are restricted'
 lev && (
     update_conf /etc/security/limits.conf '*   hard    core    0'
     update_conf /etc/sysctl.d/local.conf 'fs.suid_dumpable' 'fs.suid_dumpable = 0'
-    disable_package apport
+    upd && install_package systemd-coredump
+    update_conf /etc/systemd/coredump.conf 'Storage' 'Storage=none'
+    update_conf /etc/systemd/coredump.conf 'ProcessSizeMax' 'ProcessSizeMax=0'
 )
 
-NO=1.6.1.1;   W=1; S=1; E=; SC=;  BD='Ensure AppArmor is installed'
+NO=1.6.1.1;   W=1; S=3; E=; SC=;  BD='Ensure AppArmor is installed'
 lev && (
     upd && install_package apparmor
     upd && install_package apparmor-utils
 )
 
-NO=1.6.1.2;   W=1; S=1; E=; SC=;  BD='Ensure AppArmor is enabled in the bootloader configuration'
+NO=1.6.1.2;   W=1; S=3; E=; SC=;  BD='Ensure AppArmor is enabled in the bootloader configuration'
 lev && (
     update_conf /etc/default/grub 'GRUB_CMDLINE_LINUX="apparmor' 'GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor"'
     update_grub
 )
     
-NO=1.6.1.3;   W=1; S=1; E=; SC=;  BD='Ensure all AppArmor Profiles are in enforce or complain mode'
+NO=1.6.1.3;   W=1; S=3; E=; SC=;  BD='Ensure all AppArmor Profiles are in enforce or complain mode'
 lev && (
     upd && aa-complain /etc/apparmor.d/*
     qte || aa-status | grep complain
@@ -826,7 +815,7 @@ lev && (
     qte && apparmor_status | grep processes >> ${CISLOG}
 )
     
-NO=1.6.1.4;   W=2; S=2; E=; SC=;  BD='Ensure all AppArmor Profiles are enforcing'
+NO=1.6.1.4;   W=2; S=3; E=; SC=;  BD='Ensure all AppArmor Profiles are enforcing'
 lev && (
     upd && aa-enforce /etc/apparmor.d/*
     qte || aa-status | grep enforce
@@ -834,25 +823,25 @@ lev && (
     qte && apparmor_status | grep processes >> ${CISLOG}
 )
     
-NO=1.7.1;     W=1; S=1; E=; SC=;  BD='Ensure message of the day is configured properly'
+NO=1.7.1;     W=1; S=3; E=; SC=;  BD='Ensure message of the day is configured properly'
 lev && (update_message /etc/motd)
 
-NO=1.7.2;     W=1; S=1; E=; SC=;  BD='Ensure permissions on /etc/issue.net are configured'
-lev && (update_file /etc/issue.net root root 644)
+NO=1.7.2;     W=1; S=1; E=; SC=;  BD='Ensure local login warning banner is configured properly'
+lev && (update_message /etc/issue)
 
-NO=1.7.3;     W=1; S=1; E=; SC=;  BD='Ensure permissions on /etc/issue are configured'
-lev && (update_file /etc/issue root root 644)
+NO=1.7.3;     W=1; S=1; E=; SC=;  BD='Ensure remote login warning banner is configured properly'
+lev && (update_message /etc/issue.net)
 
 NO=1.7.4;     W=1; S=1; E=; SC=;  BD='Ensure permissions on /etc/motd are configured'
 lev && (update_file /etc/motd root root 644)
 
-NO=1.7.5;     W=1; S=1; E=; SC=;  BD='Ensure remote login warning banner is configured properly'
-lev && (update_message /etc/issue.net)
+NO=1.7.5;     W=1; S=1; E=; SC=;  BD='Ensure permissions on /etc/issue are configured'
+lev && (update_file /etc/issue root root 644)
 
-NO=1.7.6;     W=1; S=1; E=; SC=;  BD='Ensure local login warning banner is configured properly'
-lev && (update_message /etc/issue)
+NO=1.7.6;     W=1; S=1; E=; SC=;  BD='Ensure permissions on /etc/issue.net are configured'
+lev && (update_file /etc/issue.net root root 644)
 
-NO=1.8.1;     W=3; S=2; E=; SC=N; BD='Ensure GNOME Display Manager is removed'
+NO=1.8.1;     W=3; S=1; E=; SC=N; BD='Ensure GNOME Display Manager is removed'
 lev && (remove_package gdm3)
 
 NO=1.8.2;     W=1; S=1; E=; SC=;  BD='Ensure GDM login banner is configured'
@@ -860,14 +849,14 @@ lev && (
     if [[ -s /etc/gdm3/greeter.dconf-defaults ]]; then
         update_conf /etc/gdm3/greeter.dconf-defaults '\[org/gnome/login-screen\]'
         update_conf /etc/gdm3/greeter.dconf-defaults 'banner-message-enable' 'banner-message-enable=true'
-        update_conf /etc/gdm3/greeter.dconf-defaults "banner-message-text" "banner-message-text='Authorized uses only. All activity may be monitored and reported.'"
+        update_conf /etc/gdm3/greeter.dconf-defaults "banner-message-text" "banner-message-text='Authorized users only. All activity may be monitored and reported.'"
         upd && dpkg-reconfigure gdm3
     else
         prn "Gnome is not installed."
     fi
 )
 
-NO=1.8.3;     W=1; S=1; E=; SC=;  BD='Ensure disable-user-list is configured'
+NO=1.8.3;     W=3; S=1; E=; SC=;  BD='Ensure disable-user-list is configured'
 lev && (
     if [[ -s /etc/gdm3/greeter.dconf-defaults ]]; then
         update_conf /etc/gdm3/greeter.dconf-defaults 'disable-user-list' 'disable-user-list=true'
@@ -876,14 +865,18 @@ lev && (
         prn "Gnome is not installed."
     fi
 )
-
+# General Information Source: https://wiki.ubuntu.com/xdmcp
+# XDMCP is a remote desktop protocol. With XDMCP, one computer A running X11 can connecting computer B running X11, and interact with computer B as if one were physically at computer B. XDMCP is integrated into X.org, the default X11 server in Ubuntu. XDMCP also needs to be implemented by the display manager.
+# Warnings
+# - XDMCP is inherently insecure as it does not encrypt your traffic. XDMCP is analogous to telnet, and therefore they share the same security issues. Over wireless, anyone can listen to your traffic and easily record your keystrokes. They can likely read what is being display on your screen. Over a wired LAN, this is more difficult but still possible. Over both, it is still somewhat easy for someone hijack your session and assume control of the sever. Therefore, only use XDMCP on a wired network that you you trust. Also, consider using alternatives that feature security (and often compression) such as NX.
+# - XDMCP uses a large amount of bandwidth because it uses no compression. A 100mbit (wired) network may be necessary. However, the lack of compression can make XDMCP provide very fast graphics when the bandwidth is available.
 NO=1.8.4;     W=1; S=1; E=; SC=;  BD='Ensure XDCMP is not enabled'
 lev && (
     if [[ -s /etc/gdm3/custom.conf ]]; then
         update_conf /etc/gdm3/custom.conf 'enable=true' '#enable=true'
     fi
 )
-
+   
 NO=1.9;       W=1; S=1; E=; SC=N; BD='Ensure updates, patches, and additional security software are installed'
 lev && (
     wget -q --spider http://google.com
@@ -898,7 +891,7 @@ lev && (
     esac
 )
 
-NO=2.1.1.1;   W=1; S=1; E=; SC=N; BD='Ensure time synchronization is in use'
+NO=2.1.1.1;   W=1; S=1; E=; SC=;  BD='Ensure time synchronization is in use'
 lev && (
     case ${NT} in
         systemd) remove_package    ntp 
@@ -917,7 +910,7 @@ lev && (
     esac
 )
 
-NO=2.1.1.2;   W=1; S=1; E=N; SC=; BD='Ensure systemd-timesyncd is configured'
+NO=2.1.1.2;   W=1; S=1; E=; SC=;  BD='Ensure systemd-timesyncd is configured'
 lev && [[ ${NT} = systemd ]] && (check_systemctl systemd-timesyncd.service) 
 
 NO=2.1.1.3;   W=1; S=1; E=; SC=;  BD='Ensure chrony is configured'
@@ -952,10 +945,8 @@ lev && [[ -z ${SDHCPD} ]] && (
 NO=2.1.6;     W=1; S=1; E=; SC=;  BD='Ensure LDAP server is not installed'
 lev && [[ -z ${SSLAPD} ]] && (remove_package slapd)
 
-NO=2.1.7;     W=1; S=1; E=; SC=;  BD='Ensure NFS are not installed'
-lev && [[ -z ${SNFS} ]] && (
-        remove_package nfs-kernel-server
-)
+NO=2.1.7;     W=1; S=1; E=; SC=;  BD='Ensure NFS is not installed'
+lev && [[ -z ${SNFS} ]] && (remove_package nfs-kernel-server)
 
 NO=2.1.8;     W=1; S=1; E=; SC=;  BD='Ensure DNS Server is not installed'
 lev && [[ -z ${SBIND} ]] && (remove_package bind9)
@@ -966,7 +957,7 @@ lev && [[ -z ${SVSFTPD} ]] && (remove_package vsftpd)
 NO=2.1.10;    W=1; S=1; E=; SC=;  BD='Ensure HTTP server is not installed'
 lev && [[ -z ${SAPACHE} ]] && (remove_package apache2)
 
-NO=2.1.11;    W=1; S=1; E=; SC=;  BD='Ensure email services are not installed'
+NO=2.1.11;    W=1; S=1; E=; SC=;  BD='Ensure IMAP and POP3 server are not installed'
 lev && [[ -z ${SDOVECOT} ]] && (
     remove_package dovecot-imapd
     remove_package dovecot-pop3d
@@ -1017,14 +1008,14 @@ lev && (remove_package ldap-utils)
 NO=2.2.6;     W=1; S=1; E=; SC=;  BD='Ensure RPC are not installed'
 lev && [[ -z ${SRPC} ]] && (remove_package rpcbind)
 
-NO=2.4;       W=1; S=1; E=; SC=N; BD='Ensure nonessential services are removed or masked'
+NO=2.4;       W=1; S=1; E=; SC=;  BD='Ensure nonessential services are removed or masked'
 lev && (
     prn "Check list of listening open ports below."
     lsof -i -P -n | grep -v "(ESTABLISHED)" | tee -a ${CISLOG}
 )
 
 NO=3.1.1;     W=2; S=2; E=; SC=N; BD='Disable IPv6'
-lev && [[ ${IPV6} ]] || (
+lev && ip6 || (
         update_conf /etc/default/grub 'GRUB_CMDLINE_LINUX="ipv6.disable=1"'
         update_grub
 )
@@ -1044,23 +1035,23 @@ lev && (
 NO=3.2.2;     W=1; S=1; E=; SC=;  BD='Ensure IP forwarding is disabled'
 lev && (
     update_conf /etc/sysctl.d/local.conf 'net.ipv4.ip_forward' 'net.ipv4.ip_forward = 0'
-    [[ ${IPV6} ]] && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.forwarding' 'net.ipv6.conf.all.forwarding = 0' 
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.forwarding' 'net.ipv6.conf.all.forwarding = 0' 
 )
 
-NO=3.3.1;     W=1; S=1; E=; SC=;  BD='Ensure source routed packets are not accepted'
+NO=3.3.1;     W=1; S=1; E=; SC=;  BD='Ensure source routed packets are not accepted' 
 lev && (
     update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.accept_source_route' 'net.ipv4.conf.all.accept_source_route = 0'
     update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.accept_source_route' 'net.ipv4.conf.default.accept_source_route = 0'
-    [[ ${IPV6} ]] && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.accept_source_route' 'net.ipv6.conf.all.accept_source_route = 0'
-    [[ ${IPV6} ]] && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.default.accept_source_route' 'net.ipv6.conf.default.accept_source_route = 0'
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.accept_source_route' 'net.ipv6.conf.all.accept_source_route = 0'
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.default.accept_source_route' 'net.ipv6.conf.default.accept_source_route = 0'
 )
 
 NO=3.3.2;     W=1; S=1; E=; SC=;  BD='Ensure ICMP redirects are not accepted'
 lev && (
     update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.accept_redirects' 'net.ipv4.conf.all.accept_redirects = 0'
     update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.accept_redirects' 'net.ipv4.conf.default.accept_redirects = 0'
-    [[ ${IPV6} ]] && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.accept_redirects' 'net.ipv6.conf.all.accept_redirects = 0'
-    [[ ${IPV6} ]] && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.default.accept_redirects' 'net.ipv6.conf.default.accept_redirects = 0'
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.accept_redirects' 'net.ipv6.conf.all.accept_redirects = 0'
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.default.accept_redirects' 'net.ipv6.conf.default.accept_redirects = 0'
 )
 
 NO=3.3.3;     W=1; S=1; E=; SC=;  BD='Ensure secure ICMP redirects are not accepted'
@@ -1077,50 +1068,56 @@ lev && (
         grep -q ^net.ipv4.conf.all.log_martians /etc/ufw/sysctl.conf
         case $? in
             0) upd || prw 'File /etc/ufw/sysctl.conf overrides /etc/sysctl.conf with parameter net.ipv4.conf.all.log_martians. This must be fixed.'
-               upd && prw 'File /etc/ufw/sysctl.conf overrides /etc/sysctl.conf with parameter net.ipv4.conf.all.log_martians. Fixing.'
+               upd && prw 'File /etc/ufw/sysctl.conf overrides /etc/sysctl.conf with parameter net.ipv4.conf.all.log_martians. Fixing.' 
                upd && sed -i "/^net.ipv4.conf.all.log_martians/ c #net.ipv4.conf.all.log_martians" /etc/ufw/sysctl.conf ;;
         esac
         grep -q ^net.ipv4.conf.default.log_martians /etc/ufw/sysctl.conf
         case $? in
             0) upd || prw '/etc/ufw/sysctl.conf overrides /etc/sysctl.conf with parameter net.ipv4.conf.default.log_martians. This must be fixed.'
-               upd && prw '/etc/ufw/sysctl.conf overrides /etc/sysctl.conf with parameter net.ipv4.conf.default.log_martians. Fixing.'
+               upd && prw '/etc/ufw/sysctl.conf overrides /etc/sysctl.conf with parameter net.ipv4.conf.default.log_martians. Fixing.' 
                upd && sed -i "/^net.ipv4.conf.default.log_martians/ c #net.ipv4.conf.default.log_martians" /etc/ufw/sysctl.conf ;;
         esac
     fi
 )
 
 NO=3.3.5;     W=1; S=1; E=; SC=;  BD='Ensure broadcast ICMP requests are ignored'
-lev && (update_conf /etc/sysctl.d/local.conf 'net.ipv4.icmp_echo_ignore_broadcasts' 'net.ipv4.icmp_echo_ignore_broadcasts = 1')
+lev && (
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.icmp_echo_ignore_broadcasts' 'net.ipv4.icmp_echo_ignore_broadcasts = 1'
+)
 
 NO=3.3.6;     W=1; S=1; E=; SC=;  BD='Ensure bogus ICMP responses are ignored'
-lev && (update_conf /etc/sysctl.d/local.conf 'net.ipv4.icmp_ignore_bogus_error_responses' 'net.ipv4.icmp_ignore_bogus_error_responses = 1')
+lev && (
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.icmp_ignore_bogus_error_responses' 'net.ipv4.icmp_ignore_bogus_error_responses = 1'
+)
 
 NO=3.3.7;     W=1; S=1; E=; SC=;  BD='Ensure Reverse Path Filtering is enabled'
-lev && (
+lev && [[ -z ${PBGP} ]] && (
     update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.rp_filter' 'net.ipv4.conf.all.rp_filter = 1'
     update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.rp_filter' 'net.ipv4.conf.default.rp_filter = 1'
 )
 
 NO=3.3.8;     W=1; S=1; E=; SC=;  BD='Ensure TCP SYN Cookies is enabled'
-lev && (update_conf /etc/sysctl.d/local.conf 'net.ipv4.tcp_syncookies' 'net.ipv4.tcp_syncookies = 1')
+lev && (
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.tcp_syncookies' 'net.ipv4.tcp_syncookies = 1'
+)
 
 NO=3.3.9;     W=1; S=1; E=; SC=;  BD='Ensure IPv6 router advertisements are not accepted'
-lev && [[ ${IPV6} ]] && (
+lev && ip6 && (
     update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.accept_ra' 'net.ipv6.conf.all.accept_ra = 0'
     update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.default.accept_ra' 'net.ipv6.conf.default.accept_ra = 0'
 )
 
-NO=3.4.1;     W=2; S=2; E=; SC=N; BD='Ensure DCCP is disabled'
-lev && (update_modprobe dccp)
+NO=3.4.1;     W=2; S=1; E=; SC=N; BD='Ensure DCCP is disabled'
+lev && [[ -z ${PDCCP} ]] && (update_modprobe dccp)
 
-NO=3.4.2;     W=2; S=2; E=; SC=N; BD='Ensure SCTP is disabled'
-lev && (update_modprobe sctp)
+NO=3.4.2;     W=2; S=1; E=; SC=N; BD='Ensure SCTP is disabled'
+lev && [[ -z ${PSCTP} ]] && (update_modprobe sctp)
 
-NO=3.5.3;     W=2; S=2; E=; SC=N; BD='Ensure RDS is disabled'
-lev && (update_modprobe rds)
+NO=3.4.3;     W=2; S=1; E=; SC=N; BD='Ensure RDS is disabled'
+lev && [[ -z ${PRDS} ]] && (update_modprobe rds)
 
-NO=3.5.4;     W=2; S=2; E=; SC=N; BD='Ensure TIPC is disabled'
-lev && (update_modprobe tipc)
+NO=3.4.4;     W=2; S=1; E=; SC=N; BD='Ensure TIPC is disabled'
+lev && [[ -z ${PTIPC} ]] && (update_modprobe tipc)
 
 NO=3.5.1.1;   W=1; S=1; E=; SC=;  BD='Ensure Uncomplicated Firewall is installed'
 lev && UFW && (install_package ufw)
@@ -1128,7 +1125,7 @@ lev && UFW && (install_package ufw)
 NO=3.5.1.2;   W=1; S=1; E=; SC=;  BD='Ensure iptables-persistent is not installed'
 lev && UFW && (remove_package iptables-persistent)
 
-NO=3.5.1.3;   W=1; S=1; E=; SC=;  BD='Ensure ufw service is enabled'
+NO=3.5.1.3;   W=1; S=3; E=; SC=;  BD='Ensure ufw service is enabled'
 lev && UFW && (
     (ufw status | grep -qwi "active") || (
         upd || prw "UFW firewall needs to be enabled."
@@ -1140,7 +1137,7 @@ lev && UFW && (
     ip6 || (update_conf /etc/default/ufw 'IPV6' 'IPV6=no')
 )
 
-NO=3.5.1.4;   W=1; S=1; E=; SC=;  BD='Ensure loopback traffic is configured'
+NO=3.5.1.4;   W=1; S=3; E=; SC=;  BD='Ensure loopback traffic is configured'
 lev && UFW && (
     upd || prn "UFW: Loopback traffic might need to be configured."
     upd && prn "UFW: Configuring Loopback traffic."
@@ -1150,7 +1147,7 @@ lev && UFW && (
     upd && ip6 && ufw deny in from ::1
 )
 
-NO=3.5.1.5;   W=1; S=1; E=; SC=N; BD='Ensure outbound connections are configured'
+NO=3.5.1.5;   W=1; S=3; E=; SC=N; BD='Ensure outbound connections are configured'
 lev && UFW && (
     upd || prn "UFW: Outbound connections  might need to be configured."
     upd && prn "UFW: Configuring Outbound connections."
@@ -1162,7 +1159,7 @@ lev && UFW && (
     upd && ufw allow out git
 )
 
-NO=3.5.1.6;   W=1; S=1; E=; SC=N; BD='Ensure firewall rules exist for all open ports'
+NO=3.5.1.6;   W=1; S=3; E=; SC=N; BD='Ensure firewall rules exist for all open ports'
 lev && UFW && (
     # tcp
     while read PORT; do
@@ -1189,7 +1186,7 @@ lev && UFW && (
     done < <(netstat -tnlp | grep "^udp " | grep -v 127 | cut -d: -f2 | awk  '{print $1}')
 )
 
-NO=3.5.1.7;   W=1; S=1; E=; SC=;  BD='Ensure default deny firewall policy'
+NO=3.5.1.7;   W=1; S=3; E=; SC=;  BD='Ensure default deny firewall policy'
 lev && UFW && (
     upd && ufw default deny incoming
     upd && ufw default deny outgoing
@@ -1208,24 +1205,24 @@ lev && nft && (
     upd && ip6tables -F
 )
 
-NO=3.5.2.4;   W=1; S=1; E=; SC=;  BD='Ensure a nftables table exists'
+NO=3.5.2.4;   W=1; S=3; E=; SC=;  BD='Ensure a nftables table exists'
 lev && nft && upd && (nft create table inet filter)
 
-NO=3.5.2.5;   W=1; S=1; E=; SC=;  BD='Ensure nftables base chains exist'
+NO=3.5.2.5;   W=1; S=3; E=; SC=;  BD='Ensure nftables base chains exist'
 lev && nft && (
     upd && nft create chain inet filter input   { type filter hook input priority 0 \; } 
     upd && nft create chain inet filter forward { type filter hook forward priority 0 \; }
     upd && nft create chain inet filter output  { type filter hook output priority 0 \; }
 )
 
-NO=3.5.2.6;   W=1; S=1; E=; SC=;  BD='Ensure nftables loopback traffic is configured'
+NO=3.5.2.6;   W=1; S=3; E=; SC=;  BD='Ensure nftables loopback traffic is configured'
 lev && nft && (
     upd && nft add rule inet filter input iif lo accept
     upd && nft create rule inet filter input ip saddr 127.0.0.0/8 counter drop
     upd && ip6 && nft add rule inet filter input ip6 saddr ::1 counter drop
 )
 
-NO=3.5.2.7;   W=1; S=1; E=; SC=N; BD='Ensure nftables outbound and established connections are configured'
+NO=3.5.2.7;   W=1; S=3; E=; SC=N; BD='Ensure nftables outbound and established connections are configured'
 lev && nft && (
     upd || prn "Nftables: Outbound connections might need to be configured."
     upd && prn "Nftables: Configuring outbound connections."
@@ -1237,7 +1234,7 @@ lev && nft && (
     upd && nft add rule inet filter output ip protocol icmp ct state new,related,established accept
 )
 
-NO=3.5.2.8;   W=1; S=1; E=; SC=;  BD='Ensure nftables default deny firewall policy'
+NO=3.5.2.8;   W=1; S=3; E=; SC=;  BD='Ensure nftables default deny firewall policy'
 lev && nft && (
     upd || prn "Nftables: Default deny firewall policy might need to be configured."
     upd && prn "Nftables: Configuring default deny firewall policy."
@@ -1247,7 +1244,7 @@ lev && nft && (
     upd && nft chain inet filter output { policy drop \; }
 )
 
-NO=3.5.2.9;   W=1; S=1; E=; SC=;  BD='Ensure nftables service is enabled'
+NO=3.5.2.9;   W=1; S=3; E=; SC=;  BD='Ensure nftables service is enabled'
 lev && nft && upd && (systemctl enable nftables)
 
 NO=3.5.2.10;  W=1; S=1; E=; SC=;  BD='Ensure nftables rules are permanent'
@@ -1275,7 +1272,7 @@ lev && ipt && (
     upd && iptables-save -c > /etc/iptables.rules
 )
 
-NO=3.5.3.2.2; W=1; S=1; E=; SC=N; BD='Ensure outbound and established connections are configured'
+NO=3.5.3.2.2; W=1; S=3; E=; SC=N; BD='Ensure outbound and established connections are configured'
 lev && ipt && (
     upd || prn "Iptables. Outbound and established connections might need to be configured."
     upd && prn "Iptables. Configuring outbound and established connections."
@@ -1286,7 +1283,9 @@ lev && ipt && (
     upd && iptables -A INPUT  -p udp  -m state --state ESTABLISHED     -j ACCEPT
     upd && iptables -A INPUT  -p icmp -m state --state ESTABLISHED     -j ACCEPT
     upd && iptables-save -c > /etc/iptables.rules
-NO=3.5.3.2.3; W=1; S=1; E=; SC=;  BD='Ensure iptables default deny firewall policy'
+)
+
+NO=3.5.3.2.3; W=1; S=3; E=; SC=;  BD='Ensure iptables default deny firewall policy'
 lev && ipt && (
     upd || prn "Iptables. Default deny firewall policy might need to be configured."
     upd && prn "Iptables. Configuring default deny firewall policy."
@@ -1296,7 +1295,7 @@ lev && ipt && (
     upd && iptables-save -c > /etc/iptables.rules
 )
 
-NO=3.5.3.2.4; W=1; S=1; E=; SC=;  BD='Ensure iptables firewall rules exist for all open ports'
+NO=3.5.3.2.4; W=1; S=3; E=; SC=;  BD='Ensure iptables firewall rules exist for all open ports'
 lev && ipt && (
     upd || prn "Iptables. Firewall rules for all open ports might need to be configured."
     upd && prn "Iptables. Configuring firewall rules for all open ports."
@@ -1327,7 +1326,7 @@ lev && ipt && (
     upd && iptables-save -c > /etc/iptables.rules
 )
 
-NO=3.5.3.3.1; W=1; S=1; E=; SC=;  BD='Ensure ip6tables loopback traffic is configured'
+NO=3.5.3.3.1; W=1; S=3; E=; SC=;  BD='Ensure ip6tables loopback traffic is configured'
 lev && ipt && ip6 &&  (
     upd || prn "Ip6tables. Loopback traffic might need to be configured."
     upd && prn "Ip6tables. Configuring loopback traffic."
@@ -1337,7 +1336,7 @@ lev && ipt && ip6 &&  (
     upd && iptables-save -c > /etc/iptables.rules
 )
 
-NO=3.5.3.3.2; W=1; S=1; E=; SC=;  BD='Ensure ip6tables outbound and established connections are configured'
+NO=3.5.3.3.2; W=1; S=3; E=; SC=;  BD='Ensure ip6tables outbound and established connections are configured'
 lev && ipt && ip6 && (
     upd || prn "Ip6tables. Outbound and established connections might need to be configured."
     upd && prn "Ip6tables. Configuring outbound and established connections."
@@ -1350,7 +1349,7 @@ lev && ipt && ip6 && (
     upd && iptables-save -c > /etc/iptables.rules
 )
 
-NO=3.5.3.3.3; W=1; S=1; E=; SC=;  BD='Ensure ip6tables default deny firewall policy'
+NO=3.5.3.3.3; W=1; S=3; E=; SC=;  BD='Ensure ip6tables default deny firewall policy'
 lev && ipt && ip6 && (
     upd || prn "Ip6tables. Default deny firewall might need to be configured."
     upd && prn "Ip6tables. Configuring default deny firewall policy."
@@ -1360,7 +1359,7 @@ lev && ipt && ip6 && (
     upd && iptables-save -c > /etc/iptables.rules
 )
 
-NO=3.5.3.3.4; W=1; S=1; E=; SC=N; BD='Ensure ip6tables firewall rules exist for all open ports'
+NO=3.5.3.3.4; W=1; S=3; E=; SC=N; BD='Ensure ip6tables firewall rules exist for all open ports'
 lev && ipt && ip6 && (
     upd || prn "ip6tables. Firewall rules for all open ports might need to be configured."
     upd && prn "ip6tables. Configuring firewall rules for all open ports."
@@ -1403,11 +1402,14 @@ lev && (check_systemctl auditd)
 NO=4.1.1.3;   W=2; S=2; E=; SC=;  BD='Ensure auditing for processes that start prior to auditd is enabled'
 lev && (
     update_conf /etc/default/grub 'GRUB_CMDLINE_LINUX="audit=1"'
-    update_grub
+    update_grub    
 ) 
 
 NO=4.1.1.4;   W=2; S=2; E=; SC=;  BD='Ensure audit_backlog_limit is sufficient'
-lev && (update_conf /etc/default/grub 'GRUB_CMDLINE_LINUX="audit_backlog_limit=8192"')
+lev && (
+    update_conf /etc/default/grub 'GRUB_CMDLINE_LINUX="audit_backlog_limit=8192"'
+    update_grub    
+)
 
 NO=4.1.2.1;   W=2; S=2; E=; SC=;  BD='Ensure audit log storage size is configured'
 lev && (update_conf /etc/audit/auditd.conf "max_log_file =" "max_log_file = ${MAXLOGFILE}")
@@ -1513,10 +1515,10 @@ lev && (
     update_conf /etc/audit/rules.d/audit.rules '-w /etc/sudoers.d/ -p wa -k scope'
 )
 
-NO=4.1.15;    W=2; S=2; E=; SC=;  BD='Ensure system administrator command execturions (sudo) are collected'
-lev && ( 
-    update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b64 -C euid!=uid -F euid=0 -Fauid>=1000 -F auid!=4294967295 -S execve -k   actions'
-    update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -C euid!=uid -F euid=0 -Fauid>=1000 -F auid!=4294967295 -S execve -k   actions'
+NO=4.1.15;    W=2; S=2; E=; SC=;  BD='Ensure system administrator command executions (sudo) are collected'
+lev && (
+update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b64 -C euid!=uid -F euid=0 -Fauid>=1000 -F auid!=4294967295 -S execve -k   actions'
+update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -C euid!=uid -F euid=0 -Fauid>=1000 -F auid!=4294967295 -S execve -k   actions'
 )
 
 NO=4.1.16;    W=2; S=2; E=; SC=;  BD='Ensure kernel module loading and unloading is collected'
@@ -1568,7 +1570,6 @@ lev && (
     update_conf /etc/rsyslog.d/50-default.conf 'local2,local3.*' 'local2,local3.*                         -/var/log/localmessages'
     update_conf /etc/rsyslog.d/50-default.conf 'local4,local5.*' 'local4,local5.*                         -/var/log/localmessages'
     update_conf /etc/rsyslog.d/50-default.conf 'local6,local7.*' 'local6,local7.*                         -/var/log/localmessages'
-
 )
 
 NO=4.2.1.4;   W=1; S=1; E=; SC=;  BD='Ensure rsyslog default file permissions configured'
@@ -1642,7 +1643,7 @@ lev && (update_file /etc/cron.monthly root root 700)
 NO=5.1.7;     W=1; S=1; E=; SC=;  BD='Ensure permissions on /etc/cron.d are configured'
 lev && (update_file /etc/cron.d root root 700)
 
-NO=5.1.8;     W=1; S=1; E=; SC=;  BD='Ensure at/cron is restricted to authorized users'
+NO=5.1.8;     W=1; S=1; E=; SC=;  BD='Ensure cron is restricted to authorized users'
 lev && (
     delete_file /etc/cron.deny
     update_file /etc/cron.allow root root 640 '# Created by Cisecurity remediation script'
@@ -1733,8 +1734,9 @@ lev && ssd && (
 NO=5.3.17;    W=1; S=1; E=; SC=;  BD='Ensure SSH LoginGraceTime is set to one minute or less'
 lev && ssd && (update_conf /etc/ssh/sshd_config 'LoginGraceTime' 'LoginGraceTime 60')
 
+
 NO=5.3.18;    W=1; S=1; E=; SC=;  BD='Ensure SSH warning banner is configured'
-lev && ssd && (update_conf /etc/ssh/sshd_config 'Banner /etc/issue.net' 'Banner /etc/issue.net')
+lev && ssd && (update_conf /etc/ssh/sshd_config 'Banner' 'Banner /etc/issue.net')
 
 NO=5.3.19;    W=1; S=1; E=; SC=;  BD='Ensure SSH PAM is enabled'
 lev && ssd && (update_conf /etc/ssh/sshd_config 'UsePAM' 'UsePAM yes')
@@ -1743,15 +1745,15 @@ NO=5.3.20;    W=1; S=1; E=; SC=;  BD='Ensure SSH AllowTcpForwarding is disabled'
 lev && ssd && (update_conf /etc/ssh/sshd_config 'AllowTcpForwarding' 'AllowTcpForwarding no')
 
 NO=5.3.21;    W=1; S=1; E=; SC=;  BD='Ensure SSH MaxStartups is configured'
-lev && ssd && (update_conf /etc/ssh/sshd_config 'MaxStartups' 'MaxStartups 10:30:60')
+lev && ssd && (update_conf /etc/ssh/sshd_config 'MaxStartups' 'MaxStartups 10:30:100')
 
-NO=5.3.22;    W=1; S=1; E=; SC=;  BD='Ensure SSH MaxSessions is set to 4 or less'
+NO=5.3.22;    W=1; S=3; E=; SC=;  BD='Ensure SSH MaxSessions is is limited'
 lev && ssd && (update_conf /etc/ssh/sshd_config 'MaxSessions' "MaxSessions ${SSHMAXSS}")
 
-NO=5.4.1;     W=1; S=1; E=; SC=;  BD='Ensure password creation requirements are configured'
+NO=5.4.1;     W=1; S=3; E=; SC=;  BD='Ensure password creation requirements are configured'
 lev && (
     install_package libpam-pwquality
-    update_conf /etc/pam.d/common-password "password	requisite			pam_pwquality" "password	requisite			pam_pwquality.so retry=${PAMRETRY}"
+    update_conf /etc/pam.d/common-password "password	requisite			pam_pwquality" "password	requisite			pam_pwquality.so	retry=${PAMRETRY}"
     update_conf /etc/security/pwquality.conf "minlen"  "minlen  = ${PAMMINLEN}"
     update_conf /etc/security/pwquality.conf "dcredit" "dcredit = ${PAMDCREDIT}"
     update_conf /etc/security/pwquality.conf "ucredit" "ucredit = ${PAMUCREDIT}"
@@ -1759,15 +1761,15 @@ lev && (
     update_conf /etc/security/pwquality.conf "lcredit" "lcredit = ${PAMLCREDIT}"
 )
 
-NO=5.4.2;     W=1; S=1; E=; SC=;  BD='Ensure lockout for failed password attempts is configured'
+NO=5.4.2;     W=1; S=3; E=; SC=;  BD='Ensure lockout for failed password attempts is configured'
 lev && (
-    update_conf /etc/pam.d/common-auth "auth required pam_tally2" "auth required pam_tally2.so onerr=fail audit silent deny=${PAMDENY} unlock_time=${PAMUNLOCK}"
+    update_conf /etc/pam.d/common-auth "auth	required			pam_tally2.so" "auth	required			pam_tally2.so	onerr=fail	audit	silent	deny=${PAMDENY}	unlock_time=${PAMUNLOCK}"
     update_conf /etc/pam.d/common-account 'account	requisite			pam_deny.so'
     update_conf /etc/pam.d/common-account 'account	required			pam_tally2.so'
 )
 
 NO=5.4.3;     W=1; S=1; E=; SC=;  BD='Ensure password reuse is limited'
-lev && (update_conf /etc/pam.d/common-password "password required pam_pwhistory" "password required pam_pwhistory.so remember=${PAMHISTORY}")
+lev && (update_conf /etc/pam.d/common-password "password	required	pam_pwhistory.so" "password	required	pam_pwhistory.so	remember=${PAMHISTORY}")
 
 NO=5.4.4;     W=1; S=1; E=; SC=;  BD='Ensure password hashing algorithm is SHA-512'
 lev && (
@@ -1777,25 +1779,25 @@ lev && (
 )
 
 # Parameter 1 = (4=mindays,5=maxdays, 6=warndays,7=inactive)
-NO=5.5.1.1;   W=1; S=1; E=; SC=;  BD='Ensure minimum days between password changes is configured'
+NO=5.5.1.1;   W=1; S=3; E=; SC=;  BD='Ensure minimum days between password changes is configured'
 lev && (
     update_conf /etc/login.defs "PASS_MIN_DAYS" "PASS_MIN_DAYS ${PASSMINDAYS}"
     update_chage 4 ${PASSMINDAYS}
 )
 
-NO=5.5.1.2;   W=1; S=1; E=; SC=;  BD='Ensure password expiration is 365 days or less'
+NO=5.5.1.2;   W=1; S=3; E=; SC=;  BD='Ensure password expiration is 365 days or less'
 lev && (
     update_conf /etc/login.defs "PASS_MAX_DAYS" "PASS_MAX_DAYS ${PASSMAXDAYS}"
     update_chage 5 ${PASSMAXDAYS}
 )
 
-NO=5.5.1.3;   W=1; S=1; E=; SC=;  BD='Ensure password expiration warning days is 7 or more'
+NO=5.5.1.3;   W=1; S=3; E=; SC=;  BD='Ensure password expiration warning days is 7 or more'
 lev && (
     update_conf /etc/login.defs "PASS_WARN_AGE" "PASS_WARN_AGE ${PASSWARNDAYS}"
     update_chage 6 ${PASSWARNDAYS}
 )
 
-NO=5.5.1.4;   W=1; S=1; E=; SC=;  BD='Ensure inactive password lock is 30 days or less'
+NO=5.5.1.4;   W=1; S=3; E=; SC=;  BD='Ensure inactive password lock is 30 days or less'
 lev && (
     upd && useradd -D -f ${PASSINACTIVE}
     update_chage 7 ${PASSINACTIVE}
@@ -1807,7 +1809,7 @@ lev && (
     update_chage 0 ${TODAY}
 )
 
-NO=5.5.2;     W=1; S=1; E=; SC=;  BD='Ensure system accounts are secured'
+NO=5.5.2;     W=1; S=3; E=; SC=;  BD='Ensure system accounts are secured'
 lev && (
     while read USR; do
         upd || prw "System account ${USR} has shell $(grep ^${USR} /etc/passwd | awk -F: '{print $7}'). It needs to be changed to $(which nologin)." 
@@ -1837,18 +1839,17 @@ lev && (
 
 NO=5.5.4;     W=1; S=1; E=; SC=;  BD='Ensure default user umask is 027 or more restrictive'
 lev && (
-    update_conf /etc/pam.d/common-session 'session  optional            pam_umask.so'
-    update_conf /etc/login.defs 'UMASK' 'UMASK  027'
-    update_conf /etc/login.defs 'USERGROUPS_ENAB' 'USERGROUPS_ENAB  no'
-
+    update_conf /etc/pam.d/common-session 'session	optional			pam_umask.so'
+    update_conf /etc/login.defs 'UMASK' 'UMASK	027'
+    update_conf /etc/login.defs 'USERGROUPS_ENAB' 'USERGROUPS_ENAB	no'
 )
 
-NO=5.5.5;     W=1; S=1; E=; SC=;  BD='Ensure default user shell timeout is 900 seconds or less'
+NO=5.5.5;     W=1; S=3; E=; SC=;  BD='Ensure default user shell timeout is 900 seconds or less'
 lev && (
     update_conf /etc/profile     "readonly TMOUT" "readonly TMOUT=${CISTMOUT} ; export TMOUT"
 )
 
-NO=5.6;       W=1; S=1; E=; SC=N; BD='Ensure root login is restricted to system console'
+NO=5.6;       W=1; S=3; E=; SC=N; BD='Ensure root login is restricted to system console'
 lev && (
     if  [[ ! -s /etc/securetty ]]; then
         update_file /etc/securetty root root 640
@@ -1857,23 +1858,23 @@ lev && (
         for CONSOLE in ${ROOTLOGIN}
         do
             update_conf /etc/securetty "${CONSOLE}"
-        done
+        done 
     fi
 )
 
-NO=5.7;       W=1; S=1; E=; SC=;  BD='Ensure access to the su command is restricted'
+NO=5.7;       W=1; S=3; E=; SC=;  BD='Ensure access to the su command is restricted'
 lev && (
-    update_conf /etc/pam.d/su "auth required            pam_wheel.so" "auth required            pam_wheel.so    use_uid group=${SUGROUP}"
+    update_conf /etc/pam.d/su "auth	required			pam_wheel.so" "auth	required			pam_wheel.so	use_uid	group=${SUGROUP}"
     grep -q ^${SUGROUP} /etc/group
     case $? in
-        0)  prn "Group ${SUGROUP} already exists in /etc/group."
+        0)  prn "Group ${SUGROUP} already exists in /etc/group." 
             grep ${SUGROUP} /etc/group | cut -d: -f4 | grep -i '[a-z]'
             case $? in
                 0)  prw "Group ${SUGROUP} contains user accounts. It should be empty." ;;
                 *)  prn "Group ${SUGROUP} does not contains any users." ;;
             esac ;;
-        *)  upd || prw "Group ${SUGROUP} needs to be added to /etc/group."
-            upd && prw "Adding Group ${SUGROUP} to /etc/group."
+        *)  upd || prw "Group ${SUGROUP} needs to be added to /etc/group." 
+            upd && prw "Adding Group ${SUGROUP} to /etc/group." 
             upd && groupadd ${SUGROUP} ;;
     esac
 )
@@ -1944,7 +1945,7 @@ lev && (
     err || prn "No ungrouped files found." 
 )
 
-NO=6.1.13;    W=1; S=1; E=; SC=N; BD='Audit SUID executables'
+NO=6.1.13;    W=1; S=3; E=; SC=N; BD='Audit SUID executables'
 lev && (
     df --local -P | awk {'if (NR!=1) print $6'} | xargs -I '{}' find '{}' -xdev -type f -perm -4000 2>/dev/null | sort >${TMP2}
     grep "##SUID##" ${CISRC} | cut -d" " -f2 | sort > ${TMP1}
@@ -2015,7 +2016,7 @@ lev && (
     err || prn "All groups in /etc/passwd exist in /etc/group."
 )
 
-NO=6.2.4;     W=1; S=1; E=; SC=;  BD='Ensure all users home directories exist'
+NO=6.2.4;     W=1; S=3; E=; SC=;  BD='Ensure all users home directories exist'
 lev && (
     while read USR DIR; do
         if  [[ ! -d ${DIR} ]]; then
@@ -2029,7 +2030,7 @@ lev && (
     err  || prn "All standard users and root have a home directory."
 )
 
-NO=6.2.5;     W=1; S=1; E=; SC=;  BD='Ensure users own their home directories'
+NO=6.2.5;     W=1; S=3; E=; SC=;  BD='Ensure users own their home directories'
 lev && (
     while read USR DIR; do 
         if [[ ! -d ${DIR} ]]; then 
@@ -2044,7 +2045,7 @@ lev && (
     err || prn "All users own their home directories."
 )
 
-NO=6.2.6;     W=1; S=1; E=; SC=;  BD='Ensure users home directories permissions are 750 or more restrictive'
+NO=6.2.6;     W=1; S=3; E=; SC=;  BD='Ensure users home directories permissions are 750 or more restrictive'
 lev && (
     while read USR DIR; do 
         if [[ ! -d ${DIR} ]]; then 
@@ -2243,7 +2244,8 @@ lev && (
     update_conf /etc/sysctl.d/local.conf 'net.ipv4.tcp_congestion_control=bbr'    #BBR
 )
 
-
-echo -e "\n\n\n\n######################################"
-echo -e "\nSystem is hardened." 
-echo -e "\n######################################"
+qte || (
+    echo -e "\n\n\n\n######################################"
+    echo -e "\nSystem is hardened." 
+    echo -e "\n######################################"
+)
