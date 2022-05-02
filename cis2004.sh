@@ -202,6 +202,7 @@ apt list --installed 2> /dev/null | grep -q net-tools
     echo -e "Make sure you can still log in after executing in update mode before restarting."
     echo -e "\nRestart $0\n"
     chmod 700 ${CISRC}
+    exit
     
 }
 
