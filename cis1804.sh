@@ -1126,7 +1126,7 @@ lev && (update_modprobe tipc)
 NO=3.5.1.1;   W=1; S=1; E=; SC=;  BD='Ensure Uncomplicated Firewall is installed'
 lev && UFW && (install_package ufw)
 
-NO=3.5.1.2;   W=1; S=3; E=; SC=;  BD='Ensure iptables-persistent is not installed'
+NO=3.5.1.2;   W=1; S=1; E=; SC=;  BD='Ensure iptables-persistent is not installed'
 lev && UFW && (remove_package iptables-persistent)
 
 NO=3.5.1.3;   W=1; S=3; E=; SC=;  BD='Ensure ufw service is enabled'
