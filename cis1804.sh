@@ -552,14 +552,6 @@ function update_conf() {
 
 ######################################## END OF FUNCTIONS ####################################### 
 
-
-NO=3.2.1;     W=1; S=1; E=; SC=;  BD='Ensure packet redirect sending is disabled'
-lev && (
-    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.send_redirects' 'net.ipv4.conf.all.send_redirects = 0'
-    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.send_redirects' 'net.ipv4.conf.default.send_redirects = 0'
-)
-
-exit
 NO=1.1.1.1;   W=1; S=1; E=; SC=;  BD='Ensure mounting of cramfs filesystems is disabled'
 lev && (update_modprobe cramfs) 
 
