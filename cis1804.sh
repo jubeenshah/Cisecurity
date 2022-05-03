@@ -623,28 +623,28 @@ lev  # Updated in 1.1.6
 NO=1.1.9;     W=1; S=1; E=; SC=;  BD='Ensure noexec option set on /dev/shm partition'
 lev  # Updated in 1.1.6
 
-NO=1.1.10;    W=2; S=2; E=; SC=;  BD='Ensure separate partition exists for /var'
+NO=1.1.10;    W=2; S=1; E=; SC=;  BD='Ensure separate partition exists for /var'
 lev && (check_fstab /var)
 
-NO=1.1.11;    W=2; S=2; E=; SC=;  BD='Ensure separate partition exists for /var/tmp'
+NO=1.1.11;    W=2; S=1; E=; SC=;  BD='Ensure separate partition exists for /var/tmp'
 lev && (check_fstab /var/tmp)
 
-NO=1.1.12;    W=2; S=2; E=; SC=;  BD='Ensure nodev option set on /var/tmp partition'
+NO=1.1.12;    W=2; S=1; E=; SC=;  BD='Ensure nodev option set on /var/tmp partition'
 lev && (update_fstab /var/tmp 'defaults,nodev,nosuid,noexec')
 
-NO=1.1.13;    W=2; S=2; E=; SC=;  BD='Ensure nosuid option set on /var/tmp partition'
+NO=1.1.13;    W=2; S=1 E=; SC=;  BD='Ensure nosuid option set on /var/tmp partition'
 lev  # Updated in 1.1.12
 
-NO=1.1.14;    W=2; S=2; E=; SC=;  BD='Ensure noexec option set on /var/tmp partition'
+NO=1.1.14;    W=2; S=1; E=; SC=;  BD='Ensure noexec option set on /var/tmp partition'
 lev  # Updated in 1.1.12
 
-NO=1.1.15;    W=2; S=2; E=; SC=;  BD='Ensure separate partition exists for /var/log'
+NO=1.1.15;    W=2; S=1; E=; SC=;  BD='Ensure separate partition exists for /var/log'
 lev && (check_fstab /var/log) 
 
-NO=1.1.16;    W=2; S=2; E=; SC=;  BD='Ensure separate partition exists for /var/log/audit'
+NO=1.1.16;    W=2; S=1; E=; SC=;  BD='Ensure separate partition exists for /var/log/audit'
 lev && (check_fstab /var/log/audit)
 
-NO=1.1.17;    W=2; S=2; E=; SC=;  BD='Ensure separate partition exists for /home'
+NO=1.1.17;    W=2; S=1; E=; SC=;  BD='Ensure separate partition exists for /home'
 lev && (check_fstab /home)
  
 NO=1.1.18;    W=1; S=3; E=; SC=;  BD='Ensure nodev option set on /home partition'
@@ -1651,7 +1651,6 @@ lev && (
 
 NO=5.1.9;     W=1; S=1; E=; SC=;  BD='Ensure at is restricted to authorized users'
 lev && (
-    delete_file /etc/at.deny
     update_file /etc/at.allow   root root 640 '# Created by Cisecurity remediation script'
 )
 
