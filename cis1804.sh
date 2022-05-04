@@ -1,6 +1,6 @@
 #! /bin/bash
 
-VERSION=20220502
+VERSION=20220504
 ################################### HARDENING SCRIPT FOR UBUNTU 18.04 ########################### 
 
 # Check for bash
