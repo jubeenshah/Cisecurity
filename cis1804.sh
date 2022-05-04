@@ -1390,28 +1390,28 @@ lev && ipt && ip6 && (
     upd && iptables-save -c > /etc/iptables.rules
 )
 
-NO=4.1.1.1;   W=2; S=2; E=; SC=;  BD='Ensure auditd is installed'
+NO=4.1.1.1;   W=2; S=1; E=; SC=;  BD='Ensure auditd is installed'
 lev && (
     install_package auditd
     install_package audispd-plugins 
 )
 
-NO=4.1.1.2;   W=2; S=2; E=; SC=;  BD='Ensure auditd service is enabled'
+NO=4.1.1.2;   W=2; S=1; E=; SC=;  BD='Ensure auditd service is enabled'
 lev && (check_systemctl auditd)
 
-NO=4.1.1.3;   W=2; S=2; E=; SC=;  BD='Ensure auditing for processes that start prior to auditd is enabled'
+NO=4.1.1.3;   W=2; S=1; E=; SC=;  BD='Ensure auditing for processes that start prior to auditd is enabled'
 lev && (
     update_conf /etc/default/grub 'GRUB_CMDLINE_LINUX="audit=1"'
     update_grub    
 ) 
 
-NO=4.1.1.4;   W=2; S=2; E=; SC=;  BD='Ensure audit_backlog_limit is sufficient'
+NO=4.1.1.4;   W=2; S=1; E=; SC=;  BD='Ensure audit_backlog_limit is sufficient'
 lev && (
     update_conf /etc/default/grub 'GRUB_CMDLINE_LINUX="audit_backlog_limit=8192"'
     update_grub    
 )
 
-NO=4.1.2.1;   W=2; S=2; E=; SC=;  BD='Ensure audit log storage size is configured'
+NO=4.1.2.1;   W=2; S=1; E=; SC=;  BD='Ensure audit log storage size is configured'
 lev && (update_conf /etc/audit/auditd.conf "max_log_file =" "max_log_file = ${MAXLOGFILE}")
 
 NO=4.1.2.2;   W=2; S=2; E=; SC=;  BD='Ensure audit logs are not automatically deleted'
@@ -1433,7 +1433,7 @@ lev && (
     update_conf /etc/audit/rules.d/audit.rules '-w /etc/localtime    -p wa -k time-change'
 )
 
-NO=4.1.4;     W=2; S=2; E=; SC=;  BD='Ensure events that modify user/group information are collected'
+NO=4.1.4;     W=2; S=1; E=; SC=;  BD='Ensure events that modify user/group information are collected'
 lev && (
     update_conf /etc/audit/rules.d/audit.rules '-w  /etc/group -p wa -k identity'
     update_conf /etc/audit/rules.d/audit.rules '-w  /etc/passwd -p wa -k identity'
@@ -1442,7 +1442,7 @@ lev && (
     update_conf /etc/audit/rules.d/audit.rules '-w  /etc/security/opasswd -p wa -k identity'
 )    
 
-NO=4.1.5;     W=2; S=2; E=; SC=;  BD='Ensure events that modify the systems network environment are collected'
+NO=4.1.5;     W=2; S=1; E=; SC=;  BD='Ensure events that modify the systems network environment are collected'
 lev && (
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale'
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale'
@@ -1458,21 +1458,21 @@ lev && (
     update_conf /etc/audit/rules.d/audit.rules '-w /etc/apparmor.d/ -p wa -k MAC-policy'
 )
 
-NO=4.1.7;     W=2; S=2; E=; SC=;  BD='Ensure login and logout events are collected'
+NO=4.1.7;     W=2; S=1; E=; SC=;  BD='Ensure login and logout events are collected'
 lev && (
     update_conf /etc/audit/rules.d/audit.rules '-w /var/log/faillog -p wa -k logins'
     update_conf /etc/audit/rules.d/audit.rules '-w /var/log/lastlog -p wa -k logins'
     update_conf /etc/audit/rules.d/audit.rules '-w /var/log/tallylog -p wa -k logins'
 )
 
-NO=4.1.8;     W=2; S=2; E=; SC=;  BD='Ensure session initiation information is collected'
+NO=4.1.8;     W=2; S=1; E=; SC=;  BD='Ensure session initiation information is collected'
 lev && (
     update_conf /etc/audit/rules.d/audit.rules '-w /var/run/utmp -p wa -k session'
     update_conf /etc/audit/rules.d/audit.rules '-w /var/log/wtmp -p wa -k logins'
     update_conf /etc/audit/rules.d/audit.rules '-w /var/log/btmp -p wa -k logins'
 )
 
-NO=4.1.9;     W=2; S=2; E=; SC=;  BD='Ensure discretionary access control permission modification events are collected'
+NO=4.1.9;     W=2; S=1; E=; SC=;  BD='Ensure discretionary access control permission modification events are collected'
 lev && (
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod'
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod'
@@ -1482,7 +1482,7 @@ lev && (
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=1000 -F auid!=4294967295 -k perm_mod'
 )
 
-NO=4.1.10;    W=2; S=2; E=; SC=;  BD='Ensure unsuccessful unauthorized file access attempts are collected'
+NO=4.1.10;    W=2; S=1; E=; SC=;  BD='Ensure unsuccessful unauthorized file access attempts are collected'
 lev && (
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=4294967295 -k access'
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=1000 -F auid!=4294967295 -k access'
@@ -1497,7 +1497,7 @@ lev && (
     done < <(df --local -P | awk '{if (NR!=1) print $6}' | xargs -I '{}' find '{}' -xdev -type f \( -perm -4000 -o -perm -2000 \))
 )
 
-NO=4.1.12;    W=2; S=2; E=; SC=;  BD='Ensure successful file system mounts are collected'
+NO=4.1.12;    W=2; S=1; E=; SC=;  BD='Ensure successful file system mounts are collected'
 lev && (
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b64 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts'
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts'
@@ -1509,19 +1509,19 @@ lev && (
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete'
 )
 
-NO=4.1.14;    W=2; S=2; E=; SC=;  BD='Ensure changes to system administration scope (sudoers) is collected'
+NO=4.1.14;    W=2; S=1; E=; SC=;  BD='Ensure changes to system administration scope (sudoers) is collected'
 lev && (
     update_conf /etc/audit/rules.d/audit.rules '-w /etc/sudoers -p wa -k scope'
     update_conf /etc/audit/rules.d/audit.rules '-w /etc/sudoers.d/ -p wa -k scope'
 )
 
-NO=4.1.15;    W=2; S=2; E=; SC=;  BD='Ensure system administrator command executions (sudo) are collected'
+NO=4.1.15;    W=2; S=1; E=; SC=;  BD='Ensure system administrator command executions (sudo) are collected'
 lev && (
 update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b64 -C euid!=uid -F euid=0 -Fauid>=1000 -F auid!=4294967295 -S execve -k   actions'
 update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -C euid!=uid -F euid=0 -Fauid>=1000 -F auid!=4294967295 -S execve -k   actions'
 )
 
-NO=4.1.16;    W=2; S=2; E=; SC=;  BD='Ensure kernel module loading and unloading is collected'
+NO=4.1.16;    W=2; S=1; E=; SC=;  BD='Ensure kernel module loading and unloading is collected'
 lev && (
     update_conf /etc/audit/rules.d/audit.rules '-w /sbin/insmod -p x -k modules'
     update_conf /etc/audit/rules.d/audit.rules '-w /sbin/rmmod -p x -k modules'
@@ -1530,7 +1530,7 @@ lev && (
     update_conf /etc/audit/rules.d/audit.rules '-a always,exit -F arch=b32 -S init_module -S delete_module -k modules'
 )
 
-NO=4.1.17;    W=2; S=2; E=; SC=;  BD='Ensure the audit configuration is immutable'
+NO=4.1.17;    W=2; S=1; E=; SC=;  BD='Ensure the audit configuration is immutable'
 lev && (
     # -e 2 must be last in the /etc/audit/rules.d/audit.rules file.
     tail -1  /etc/audit/rules.d/audit.rules | grep  '-e 2'
@@ -1778,25 +1778,25 @@ lev && (
 )
 
 # Parameter 1 = (4=mindays,5=maxdays, 6=warndays,7=inactive)
-NO=5.5.1.1;   W=1; S=3; E=; SC=;  BD='Ensure minimum days between password changes is configured'
+NO=5.5.1.1;   W=1; S=1; E=; SC=;  BD='Ensure minimum days between password changes is configured'
 lev && (
     update_conf /etc/login.defs "PASS_MIN_DAYS" "PASS_MIN_DAYS ${PASSMINDAYS}"
     update_chage 4 ${PASSMINDAYS}
 )
 
-NO=5.5.1.2;   W=1; S=3; E=; SC=;  BD='Ensure password expiration is 365 days or less'
+NO=5.5.1.2;   W=1; S=1; E=; SC=;  BD='Ensure password expiration is 365 days or less'
 lev && (
     update_conf /etc/login.defs "PASS_MAX_DAYS" "PASS_MAX_DAYS ${PASSMAXDAYS}"
     update_chage 5 ${PASSMAXDAYS}
 )
 
-NO=5.5.1.3;   W=1; S=3; E=; SC=;  BD='Ensure password expiration warning days is 7 or more'
+NO=5.5.1.3;   W=1; S=1; E=; SC=;  BD='Ensure password expiration warning days is 7 or more'
 lev && (
     update_conf /etc/login.defs "PASS_WARN_AGE" "PASS_WARN_AGE ${PASSWARNDAYS}"
     update_chage 6 ${PASSWARNDAYS}
 )
 
-NO=5.5.1.4;   W=1; S=3; E=; SC=;  BD='Ensure inactive password lock is 30 days or less'
+NO=5.5.1.4;   W=1; S=1; E=; SC=;  BD='Ensure inactive password lock is 30 days or less'
 lev && (
     upd && useradd -D -f ${PASSINACTIVE}
     update_chage 7 ${PASSINACTIVE}
@@ -1861,7 +1861,7 @@ lev && (
     fi
 )
 
-NO=5.7;       W=1; S=3; E=; SC=;  BD='Ensure access to the su command is restricted'
+NO=5.7;       W=1; S=1; E=; SC=;  BD='Ensure access to the su command is restricted'
 lev && (
     update_conf /etc/pam.d/su "auth	required			pam_wheel.so" "auth	required			pam_wheel.so	use_uid	group=${SUGROUP}"
     grep -q ^${SUGROUP} /etc/group
