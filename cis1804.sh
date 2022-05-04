@@ -781,7 +781,7 @@ lev && (
 )
 
 NO=1.5.2;     W=1; S=1; E=; SC=;  BD='Ensure address space layout randomization (ASLR) is enabled'
-lev && (update_conf /etc/systctl.conf '#kernel.randomize_va_space' 'kernel.randomize_va_space = 2')
+lev && (update_conf /etc/sysctl.d/local.conf 'kernel.randomize_va_space' 'kernel.randomize_va_space = 2')
 
 NO=1.5.3;     W=1; S=1; E=; SC=;  BD='Ensure prelink is disabled'
 lev && (remove_package prelink)
@@ -789,7 +789,7 @@ lev && (remove_package prelink)
 NO=1.5.4;     W=1; S=1; E=; SC=;  BD='Ensure core dumps are restricted'
 lev && (
     update_conf /etc/security/limits.conf '*   hard    core    0'
-    update_conf /etc/systctl.conf '#fs.suid_dumpable' 'fs.suid_dumpable = 0'
+    update_conf /etc/sysctl.d/local.conf 'fs.suid_dumpable' 'fs.suid_dumpable = 0'
     upd && install_package systemd-coredump
     update_conf /etc/systemd/coredump.conf 'Storage' 'Storage=none'
     update_conf /etc/systemd/coredump.conf 'ProcessSizeMax' 'ProcessSizeMax=0'
@@ -1028,42 +1028,42 @@ lev && (
 
 NO=3.2.1;     W=1; S=1; E=; SC=;  BD='Ensure packet redirect sending is disabled'
 lev && (
-    update_conf /etc/systctl.conf '#net.ipv4.conf.all.send_redirects.*' 'net.ipv4.conf.all.send_redirects = 0'
-    update_conf /etc/systctl.conf '#net.ipv4.conf.default.send_redirects.*' 'net.ipv4.conf.default.send_redirects = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.send_redirects' 'net.ipv4.conf.all.send_redirects = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.send_redirects' 'net.ipv4.conf.default.send_redirects = 0'
 )
 
 NO=3.2.2;     W=1; S=1; E=; SC=;  BD='Ensure IP forwarding is disabled'
 lev && (
-    update_conf /etc/systctl.conf '#net.ipv4.ip_forward.*' 'net.ipv4.ip_forward = 0'
-    ip6 && update_conf /etc/systctl.conf '#net.ipv6.conf.all.forwarding.*' 'net.ipv6.conf.all.forwarding = 0' 
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.ip_forward' 'net.ipv4.ip_forward = 0'
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.forwarding' 'net.ipv6.conf.all.forwarding = 0' 
 )
 
 NO=3.3.1;     W=1; S=1; E=; SC=;  BD='Ensure source routed packets are not accepted' 
 lev && (
-    update_conf /etc/systctl.conf '#net.ipv4.conf.all.accept_source_route.*' 'net.ipv4.conf.all.accept_source_route = 0'
-    update_conf /etc/systctl.conf '#net.ipv4.conf.default.accept_source_route.*' 'net.ipv4.conf.default.accept_source_route = 0'
-    ip6 && update_conf /etc/systctl.conf '#net.ipv6.conf.all.accept_source_route.*' 'net.ipv6.conf.all.accept_source_route = 0'
-    ip6 && update_conf /etc/systctl.conf '#net.ipv6.conf.default.accept_source_route.*' 'net.ipv6.conf.default.accept_source_route = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.accept_source_route' 'net.ipv4.conf.all.accept_source_route = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.accept_source_route' 'net.ipv4.conf.default.accept_source_route = 0'
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.accept_source_route' 'net.ipv6.conf.all.accept_source_route = 0'
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.default.accept_source_route' 'net.ipv6.conf.default.accept_source_route = 0'
 )
 
 NO=3.3.2;     W=1; S=1; E=; SC=;  BD='Ensure ICMP redirects are not accepted'
 lev && (
-    update_conf /etc/systctl.conf '#net.ipv4.conf.all.accept_redirects.*' 'net.ipv4.conf.all.accept_redirects = 0'
-    update_conf /etc/systctl.conf '#net.ipv4.conf.default.accept_redirects.*' 'net.ipv4.conf.default.accept_redirects = 0'
-    ip6 && update_conf /etc/systctl.conf '#net.ipv6.conf.all.accept_redirects.*' 'net.ipv6.conf.all.accept_redirects = 0'
-    ip6 && update_conf /etc/systctl.conf '#net.ipv6.conf.default.accept_redirects.*' 'net.ipv6.conf.default.accept_redirects = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.accept_redirects' 'net.ipv4.conf.all.accept_redirects = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.accept_redirects' 'net.ipv4.conf.default.accept_redirects = 0'
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.accept_redirects' 'net.ipv6.conf.all.accept_redirects = 0'
+    ip6 && update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.default.accept_redirects' 'net.ipv6.conf.default.accept_redirects = 0'
 )
 
 NO=3.3.3;     W=1; S=1; E=; SC=;  BD='Ensure secure ICMP redirects are not accepted'
 lev && (
-    update_conf /etc/systctl.conf '#net.ipv4.conf.all.secure_redirects.*' 'net.ipv4.conf.all.secure_redirects = 0'
-    update_conf /etc/systctl.conf '#net.ipv4.conf.default.secure_redirects.*' 'net.ipv4.conf.default.secure_redirects = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.secure_redirects' 'net.ipv4.conf.all.secure_redirects = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.secure_redirects' 'net.ipv4.conf.default.secure_redirects = 0'
 )
 
 NO=3.3.4;     W=1; S=1; E=; SC=;  BD='Ensure suspicious packets are logged'
 lev && (
-    update_conf /etc/systctl.conf '#net.ipv4.conf.all.log_martians.*' 'net.ipv4.conf.all.log_martians = 1'
-    update_conf /etc/systctl.conf '#net.ipv4.conf.default.log_martians.*' 'net.ipv4.conf.default.log_martians = 1'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.log_martians' 'net.ipv4.conf.all.log_martians = 1'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.log_martians' 'net.ipv4.conf.default.log_martians = 1'
     if [[ -s /etc/ufw/sysctl.conf ]]; then
         grep -q ^net.ipv4.conf.all.log_martians /etc/ufw/sysctl.conf
         case $? in
@@ -1082,29 +1082,29 @@ lev && (
 
 NO=3.3.5;     W=1; S=1; E=; SC=;  BD='Ensure broadcast ICMP requests are ignored'
 lev && (
-    update_conf /etc/systctl.conf '#net.ipv4.icmp_echo_ignore_broadcasts.*' 'net.ipv4.icmp_echo_ignore_broadcasts = 1'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.icmp_echo_ignore_broadcasts' 'net.ipv4.icmp_echo_ignore_broadcasts = 1'
 )
 
 NO=3.3.6;     W=1; S=1; E=; SC=;  BD='Ensure bogus ICMP responses are ignored'
 lev && (
-    update_conf /etc/systctl.conf '#net.ipv4.icmp_ignore_bogus_error_responses.*' 'net.ipv4.icmp_ignore_bogus_error_responses = 1'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.icmp_ignore_bogus_error_responses' 'net.ipv4.icmp_ignore_bogus_error_responses = 1'
 )
 
 NO=3.3.7;     W=1; S=1; E=; SC=;  BD='Ensure Reverse Path Filtering is enabled'
 lev && [[ -z ${PBGP} ]] && (
-    update_conf /etc/systctl.conf '#net.ipv4.conf.all.rp_filter.*' 'net.ipv4.conf.all.rp_filter = 1'
-    update_conf /etc/systctl.conf '#net.ipv4.conf.default.rp_filter.*' 'net.ipv4.conf.default.rp_filter = 1'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.all.rp_filter' 'net.ipv4.conf.all.rp_filter = 1'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.conf.default.rp_filter' 'net.ipv4.conf.default.rp_filter = 1'
 )
 
 NO=3.3.8;     W=1; S=1; E=; SC=;  BD='Ensure TCP SYN Cookies is enabled'
 lev && (
-    update_conf /etc/systctl.conf '#net.ipv4.tcp_syncookies.*' 'net.ipv4.tcp_syncookies = 1'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.tcp_syncookies' 'net.ipv4.tcp_syncookies = 1'
 )
 
 NO=3.3.9;     W=1; S=1; E=; SC=;  BD='Ensure IPv6 router advertisements are not accepted'
 lev && ip6 && (
-    update_conf /etc/systctl.conf '#net.ipv6.conf.all.accept_ra.*' 'net.ipv6.conf.all.accept_ra = 0'
-    update_conf /etc/systctl.conf '#net.ipv6.conf.default.accept_ra.*' 'net.ipv6.conf.default.accept_ra = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.all.accept_ra' 'net.ipv6.conf.all.accept_ra = 0'
+    update_conf /etc/sysctl.d/local.conf 'net.ipv6.conf.default.accept_ra' 'net.ipv6.conf.default.accept_ra = 0'
 )
 
 NO=3.4.1;     W=2; S=1; E=; SC=N; BD='Ensure DCCP is disabled'
@@ -2239,8 +2239,8 @@ lev && (
     update_conf /etc/vim/vimrc 'set expandtab'
     update_conf /etc/vim/vimrc 'set shiftwidth=4'
     update_conf /etc/vim/vimrc 'set smarttab'
-    update_conf /etc/systctl.conf '#net.core.default_qdisc=fq'              #BBR
-    update_conf /etc/systctl.conf '#net.ipv4.tcp_congestion_control=bbr'    #BBR
+    update_conf /etc/sysctl.d/local.conf 'net.core.default_qdisc=fq'              #BBR
+    update_conf /etc/sysctl.d/local.conf 'net.ipv4.tcp_congestion_control=bbr'    #BBR
 )
 
 qte || (
